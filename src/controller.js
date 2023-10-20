@@ -53,6 +53,34 @@ class LibroController{
     }
   }
   
+
+  async deleteByISBN(req, res) {
+    const isbn = req.params.ISBN;
+  
+    try {
+        // Validación de entrada
+        if (!isbn || typeof isbn !== "string") {
+            return res.status(400).json({ error: "ISBN proporcionado no es válido." });
+        }
+  
+        // Verificar si el libro existe
+        const [existingBooks] = await pool.query('SELECT * FROM libros WHERE ISBN = ?', [isbn]);
+        if (existingBooks.length === 0) {
+            return res.status(404).json({ error: "El libro con este ISBN no existe." });
+        }
+  
+        // Elimina el libro
+        await pool.query('DELETE FROM libros WHERE ISBN = ?', [isbn]);
+        res.json({ message: "Libro eliminado con éxito." });
+  
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error interno del servidor." });
+    }
+  }
+  
+
+
     // Accion de lectura de todos los registros de libros 
     async getAll(req, res) {
       try {
