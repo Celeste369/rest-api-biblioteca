@@ -1,9 +1,36 @@
 // Importacion del pool de conexión creado en database.js
 import { pool } from "./database.js";
-
+import validarLibro from "./validation.js";
 
 
 class LibroController{
+    // Acción agregar libro
+    async add(req, res) {
+        const libro = req.body;
+    
+        try {
+            // Validación de entrada
+            validarLibro(libro);
+            
+            // Convertir el año de publicación en una fecha completa
+            libro.añoPublicacion = `${libro.añoPublicacion}-01-01`;
+    
+            // Verificar si el libro ya existe
+            const [existingBooks] = await pool.query('SELECT * FROM libros WHERE ISBN = ?', [libro.ISBN]);
+            if (existingBooks.length > 0) {
+                return res.status(400).json({ error: "El libro con este ISBN ya existe." });
+            }
+    
+            // Si no existe, inserta el nuevo libro
+            const [result] = await pool.query('INSERT INTO libros(nombre, autor, categoria, añoPublicacion, ISBN) VALUES (?, ?, ?, ?, ?)', [libro.nombre, libro.autor, libro.categoria, libro.añoPublicacion, libro.ISBN]);
+            res.json({ "id insertado": result.insertId });
+    
+        } catch (error) {
+            console.error(error);
+            res.status(400).json({ error: error.message });
+        }
+    }
+    
   
     // Accion de lectura de todos los registros de libros 
     async getAll(req, res) {
