@@ -31,6 +31,27 @@ class LibroController{
         }
     }
     
+
+    // Acción actualizar un libro
+    async update(req, res) {
+    const libro = req.body;
+  
+    try {
+        // Validación de entrada
+        validarLibro(libro);
+        
+        // Convertir el año de publicación en una fecha completa
+        libro.añoPublicacion = `${libro.añoPublicacion}-01-01`;
+
+        // ctualiza el libro
+        await pool.query('UPDATE libros SET nombre = ?, autor = ?, categoria = ?, añoPublicacion = ?, ISBN = ? WHERE id = ?', [libro.nombre, libro.autor, libro.categoria, libro.añoPublicacion, libro.ISBN, libro.id]);
+        res.json({ message: "Libro actualizado con éxito." });
+  
+    } catch (error) {
+        console.error(error);
+        res.status(400).json({ error: error.message });
+    }
+  }
   
     // Accion de lectura de todos los registros de libros 
     async getAll(req, res) {
