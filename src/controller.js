@@ -9,19 +9,18 @@ class LibroController{
         const libro = req.body;
     
         try {
+            // Verificar si el libro ya existe, en este caso considero el ISBN como campo distintivo de cada libro
+            const [existingBooks] = await pool.query('SELECT * FROM libros WHERE ISBN = ?', [libro.ISBN]);
+            if (existingBooks.length > 0) {
+                return res.status(400).json({ error:`El libro con el ISBN: ${[libro.ISBN]} ya existe.`});
+            }
             // Validación de entrada
             validarLibro(libro);
             
             // Convertir el año de publicación en una fecha completa
             libro.añoPublicacion = `${libro.añoPublicacion}-01-01`;
     
-            // Verificar si el libro ya existe
-            const [existingBooks] = await pool.query('SELECT * FROM libros WHERE ISBN = ?', [libro.ISBN]);
-            if (existingBooks.length > 0) {
-                return res.status(400).json({ error: "El libro con este ISBN ya existe." });
-            }
-    
-            // Si no existe, inserta el nuevo libro
+            // Si no existe y se validan correctamente sus entradas, inserta el nuevo libro
             const [result] = await pool.query('INSERT INTO libros(nombre, autor, categoria, añoPublicacion, ISBN) VALUES (?, ?, ?, ?, ?)', [libro.nombre, libro.autor, libro.categoria, libro.añoPublicacion, libro.ISBN]);
             res.json({ "id insertado": result.insertId });
     
@@ -37,13 +36,19 @@ class LibroController{
     const libro = req.body;
   
     try {
+        // Verificar si el libro ya existe
+        const [existingBooks] = await pool.query('SELECT * FROM libros WHERE id = ?', [libro.id]);
+        if (existingBooks.length === 0) {
+            return res.status(400).json({ error:`El libro con el ID: ${[libro.id]} que se intenta actualizar, no existe.` });
+        }
+
         // Validación de entrada
         validarLibro(libro);
         
         // Convertir el año de publicación en una fecha completa
         libro.añoPublicacion = `${libro.añoPublicacion}-01-01`;
 
-        // ctualiza el libro
+        // Si existe y se validan correctamente sus entradas, actualiza el libro
         await pool.query('UPDATE libros SET nombre = ?, autor = ?, categoria = ?, añoPublicacion = ?, ISBN = ? WHERE id = ?', [libro.nombre, libro.autor, libro.categoria, libro.añoPublicacion, libro.ISBN, libro.id]);
         res.json({ message: "Libro actualizado con éxito." });
   
@@ -52,24 +57,49 @@ class LibroController{
         res.status(400).json({ error: error.message });
     }
   }
+
+    // Acción actualizar un libro pasando por la ruta el ISBN de un libro
+    async updateByISBN(req, res) {
+        const libro = req.body;
+        const isbn = req.params.ISBN;
+        
+        try {  
+            // Verificar si el libro ya existe
+            const [existingBooks] = await pool.query('SELECT * FROM libros WHERE ISBN = ?', [isbn]);
+            if (existingBooks.length === 0) {
+                return res.status(400).json({ error:`El libro con el ISBN ${isbn} que se intenta actualizar, no existe.`});
+            }
+
+            
+             // Validación de entradas
+             validarLibro(libro);
+            
+             // Convertir el año de publicación en una fecha completa
+             libro.añoPublicacion = `${libro.añoPublicacion}-01-01`;
+
+    
+            // Si existe y se valida correctamente, actualiza el libro 
+            await pool.query('UPDATE libros SET nombre = ?, autor = ?, categoria = ?, añoPublicacion = ?, ISBN = ? WHERE id = ?', [libro.nombre, libro.autor, libro.categoria, libro.añoPublicacion, libro.ISBN, libro.id]);
+            res.json({ message: "Libro actualizado con éxito." });
+      
+        } catch (error) {
+            console.error(error);
+            res.status(400).json({ error: error.message });
+        }
+      }
   
 
   async deleteByISBN(req, res) {
     const isbn = req.params.ISBN;
-  
+
     try {
-        // Validación de entrada
-        if (!isbn || typeof isbn !== "string") {
-            return res.status(400).json({ error: "ISBN proporcionado no es válido." });
-        }
-  
         // Verificar si el libro existe
         const [existingBooks] = await pool.query('SELECT * FROM libros WHERE ISBN = ?', [isbn]);
         if (existingBooks.length === 0) {
-            return res.status(404).json({ error: "El libro con este ISBN no existe." });
+            return res.status(404).json({ error: `El libro con el ISBN ${isbn} que se intenta eliminar, no existe.`});
         }
   
-        // Elimina el libro
+        // Si existe el libro con el ISBN solicitado, Elimina el libro
         await pool.query('DELETE FROM libros WHERE ISBN = ?', [isbn]);
         res.json({ message: "Libro eliminado con éxito." });
   

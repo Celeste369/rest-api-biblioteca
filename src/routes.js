@@ -12,4 +12,5 @@ router.get('/libros/:id', libro.getOne);// Invocación a getOne del objeto libro
 // Rutas para el cumplimiento de pautas del trabajo integrador  
 router.post('/libros', libro.add); // Invocación a add del objeto libro (agrega un nuevo libro)
 router.put('/libros', libro.update); // Invocación al método update del objeto libro (actializa un libro con el id de req.body)
-router.delete('/libros/:ISBN', libro.deleteByISBN); // Invocación al deleteBySBN del objeto libro (elimina un libro recibiendo un ISBN específico)
+router.delete('/libros/:ISBN', libro.deleteByISBN); // Invocación al deleteBySBN del objeto libro (elimina un libro recibiendo un ISBN específico que llega por ruta)
+router.put('/libros/:ISBN', libro.updateByISBN); // Invocación al método updateByISBN del objeto libro (actializa un libro con ISBN específico que llega por la ruta)
